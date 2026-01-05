@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>3D Saturn Simulator — Stable Sun & Rings</title>
+  <title>3D Saturn Simulator — Stable Sun, Rings & Drake Cube</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
@@ -28,7 +28,7 @@
   </style>
 </head>
 <body>
-<div id="info">Visible Sun • Saturn<br>Drag = rotate • Scroll = zoom</div>
+<div id="info">Visible Sun • Saturn • Drake Cube<br>Drag = rotate • Scroll = zoom</div>
 
 <!-- Three.js r124 (NO modules) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.124.0/build/three.min.js"></script>
@@ -40,7 +40,7 @@
   var scene = new THREE.Scene();
 
   var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
-  camera.position.set(0, 3, 12);
+  camera.position.set(0, 3, 14);
 
   var renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -55,14 +55,14 @@
   // ===================== LIGHTING =====================
 
   var sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
-  sunLight.position.set(10, 0, 0); // safe default
+  sunLight.position.set(10, 0, 0);
   scene.add(sunLight);
   scene.add(new THREE.AmbientLight(0x111111));
 
-  // ===================== SUN (CREATE FIRST, ALWAYS EXISTS) =====================
+  // ===================== SUN =====================
 
   var sun = new THREE.Mesh(
-    new THREE.SphereGeometry(0, 0, 0),
+    new THREE.SphereGeometry(1.2, 48, 48),
     new THREE.MeshBasicMaterial({
       map: new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/sun.jpg')
     })
@@ -84,18 +84,33 @@
   saturn.rotation.z = THREE.Math.degToRad(26.7);
   scene.add(saturn);
 
-  // ===================== SATURN RINGS (STABLE + VISIBLE) =====================
+  // ===================== SATURN RINGS =====================
 
   var ringGeo = new THREE.RingGeometry(2.2, 3.9, 256);
   var ringMat = new THREE.MeshBasicMaterial({
     map: loader.load('https://tse4.mm.bing.net/th/id/OIP.pM8t8KZlIt-JDZEMey0t8AHaHa?cb=ucfimg2&ucfimg=1&rs=1&pid=ImgDetMain&o=7&rm=3'),
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
+    transparent: true
   });
 
   var rings = new THREE.Mesh(ringGeo, ringMat);
   rings.rotation.x = Math.PI / 2;
   rings.rotation.z = THREE.Math.degToRad(26.7);
-  saturn.add(rings); // parented so it always renders
+  saturn.add(rings);
+
+  // ===================== DRAKE CUBE =====================
+
+  var drakeCube = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.2, 1.2),
+    new THREE.MeshStandardMaterial({
+      map: loader.load('https://townsquare.media/site/812/files/2021/07/attachment-drake1.jpg?w=1200'),
+      roughness: 0.4,
+      metalness: 0.2
+    })
+  );
+
+  drakeCube.position.set(4, 0, 0); // next to Kanye planet (Saturn)
+  scene.add(drakeCube);
 
   // ===================== STARS =====================
 
@@ -121,8 +136,6 @@
   var CYCLE_DURATION = 15000;
 
   function updateSun() {
-    if (!sun || !sunLight) return; // hard safety guard
-
     var elapsed = (Date.now() - cycleStart) % CYCLE_DURATION;
     var angle = (elapsed / CYCLE_DURATION) * Math.PI * 2;
 
@@ -147,8 +160,10 @@
     requestAnimationFrame(animate);
 
     saturn.rotation.y += 0.0004;
-    updateSun();
+    drakeCube.rotation.y += 0.01;
+    drakeCube.rotation.x += 0.005;
 
+    updateSun();
     controls.update();
     renderer.render(scene, camera);
   }
@@ -157,3 +172,4 @@
 </script>
 </body>
 </html>
+
