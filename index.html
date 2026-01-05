@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>3D Saturn Simulator — Drake Impact (With Sun)</title>
+  <title>3D Saturn Simulator — Drake Impact (With Sun Texture)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
@@ -76,14 +76,16 @@ function initScene() {
   scene.add(sunLight);
   scene.add(new THREE.AmbientLight(0x111111));
 
+  var texLoader = new THREE.TextureLoader();
+
   sun = new THREE.Mesh(
     new THREE.SphereGeometry(1.2, 48, 48),
-    new THREE.MeshBasicMaterial({ color: 0xffdd55 })
+    new THREE.MeshBasicMaterial({
+      map: texLoader.load('https://townsquare.media/site/812/files/2023/02/attachment-playboi-carti-2.jpg?w=1200&format=natural')
+    })
   );
   sun.position.set(10, 0, 0);
   scene.add(sun);
-
-  var texLoader = new THREE.TextureLoader();
 
   saturn = new THREE.Mesh(
     new THREE.SphereGeometry(1.8, 128, 128),
@@ -220,4 +222,6 @@ animate();
 </script>
 </body>
 </html>
+
+
 
