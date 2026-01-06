@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>3D Saturn Simulator — Drake Impact (With Sun Texture)</title>
+  <title>3D Saturn Simulator — Drake Impact (Lil Baby Explosion)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html, body {
@@ -79,9 +79,12 @@ function initScene() {
   var texLoader = new THREE.TextureLoader();
 
   sun = new THREE.Mesh(
-    new THREE.SphereGeometry(1.2, 48, 48),
-    new THREE.MeshBasicMaterial({
-      map: texLoader.load('https://townsquare.media/site/812/files/2023/02/attachment-playboi-carti-2.jpg?w=1200&format=natural')
+    new THREE.SphereGeometry(1.4, 48, 48),
+    new THREE.MeshStandardMaterial({
+      map: texLoader.load('https://th.bing.com/th/id/R.3f2689ba00a2f677b83cd38e96500c29?rik=Kl%2bGPzOZH0q0ug&pid=ImgRaw&r=0'),
+      emissive: new THREE.Color(0xffaa33),
+      emissiveMap: texLoader.load('https://i.pinimg.com/736x/05/89/13/0589130247c9a818bb3a4db50e5baa0f.jpg'),
+      emissiveIntensity: 1.2
     })
   );
   sun.position.set(10, 0, 0);
@@ -174,7 +177,10 @@ function triggerExplosion() {
   scene.remove(drakeCube);
   scene.remove(saturn);
 
-  var count = 2000;
+  var texLoader = new THREE.TextureLoader();
+  var lilBabyTex = texLoader.load('https://i8.amplience.net/i/naras/lil-baby_MI0005107873-MN0003353669');
+
+  var count = 500;
   var geo = new THREE.BufferGeometry();
   var pos = new Float32Array(count * 3);
   var vel = [];
@@ -184,17 +190,20 @@ function triggerExplosion() {
     pos[i * 3 + 1] = 0;
     pos[i * 3 + 2] = 0;
     vel.push(new THREE.Vector3(
-      (Math.random() - 0.5) * 0.4,
-      (Math.random() - 0.5) * 0.4,
-      (Math.random() - 0.5) * 0.4
+      (Math.random() - 0.5) * 0.5,
+      (Math.random() - 0.5) * 0.5,
+      (Math.random() - 0.5) * 0.5
     ));
   }
 
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  explosionParticles = new THREE.Points(
-    geo,
-    new THREE.PointsMaterial({ color: 0xffaa00, size: 0.15 })
-  );
+  var spriteMat = new THREE.PointsMaterial({
+    map: lilBabyTex,
+    size: 0.8, // BIGGER particles
+    sizeAttenuation: true,
+    transparent: true
+  });
+  explosionParticles = new THREE.Points(geo, spriteMat);
   explosionParticles.userData.vel = vel;
   scene.add(explosionParticles);
 }
@@ -222,6 +231,4 @@ animate();
 </script>
 </body>
 </html>
-
-
 
