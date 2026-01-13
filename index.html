@@ -72,6 +72,7 @@ var impactHappened = false;
 var meteorVelocity = new THREE.Vector3(-0.03, 0, 0);
 var animationId;
 var originalCameraPosition;
+var slowMotion = false;
 
 function initScene() {
   scene = new THREE.Scene();
@@ -193,16 +194,18 @@ function updateSun() {
 function animate() {
   animationId = requestAnimationFrame(animate);
 
+  var delta = slowMotion ? 0.02 : 1;
+
   if (!impactHappened) {
-    saturn.rotation.y += 0.0004;
+    saturn.rotation.y += 0.0004 * delta;
     moons.forEach(function(m) {
-      m.pivot.rotation.y += m.speed;
+      m.pivot.rotation.y += m.speed * delta;
     });
 
-    drakeCube.rotation.x += 0.01;
-    drakeCube.rotation.y += 0.02;
+    drakeCube.rotation.x += 0.01 * delta;
+    drakeCube.rotation.y += 0.02 * delta;
 
-    drakeCube.position.add(meteorVelocity);
+    drakeCube.position.addScaledVector(meteorVelocity, delta);
 
     if (drakeCube.position.distanceTo(saturn.position) < 2.2) {
       triggerExplosion();
@@ -213,9 +216,9 @@ function animate() {
     var arr = explosionParticles.geometry.attributes.position.array;
     var vel = explosionParticles.userData.vel;
     for (var i = 0; i < vel.length; i++) {
-      arr[i * 3] += vel[i].x;
-      arr[i * 3 + 1] += vel[i].y;
-      arr[i * 3 + 2] += vel[i].z;
+      arr[i * 3] += vel[i].x * delta;
+      arr[i * 3 + 1] += vel[i].y * delta;
+      arr[i * 3 + 2] += vel[i].z * delta;
     }
     explosionParticles.geometry.attributes.position.needsUpdate = true;
   }
@@ -226,33 +229,34 @@ function animate() {
 }
 
 function triggerExplosion() {
-  // WHITE FLASH (MULTI-PULSE)
   var flash = document.getElementById('flash');
   var pulses = [0, 90, 180];
+  var shakeIntensity = 0.6;
+
   pulses.forEach(function(delay) {
     setTimeout(function () {
       flash.style.opacity = '1';
+      slowMotion = true; // enable slow-motion during pulse
+
+      var shakeStart = Date.now();
+      var shakeAnim = setInterval(function() {
+        var elapsed = Date.now() - shakeStart;
+        if (elapsed > 80) {
+          clearInterval(shakeAnim);
+          camera.position.copy(originalCameraPosition);
+          slowMotion = false; // restore normal speed after pulse
+          return;
+        }
+        camera.position.x = originalCameraPosition.x + (Math.random() - 0.5) * shakeIntensity;
+        camera.position.y = originalCameraPosition.y + (Math.random() - 0.5) * shakeIntensity;
+        camera.position.z = originalCameraPosition.z + (Math.random() - 0.5) * shakeIntensity;
+      }, 16);
+
       setTimeout(function () {
         flash.style.opacity = '0';
       }, 80);
     }, delay);
   });
-
-  // CAMERA SHAKE
-  var shakeIntensity = 0.35;
-  var shakeDuration = 400;
-  var shakeStart = Date.now();
-  var shakeAnim = setInterval(function() {
-    var elapsed = Date.now() - shakeStart;
-    if (elapsed > shakeDuration) {
-      clearInterval(shakeAnim);
-      camera.position.copy(originalCameraPosition);
-      return;
-    }
-    camera.position.x = originalCameraPosition.x + (Math.random() - 0.5) * shakeIntensity;
-    camera.position.y = originalCameraPosition.y + (Math.random() - 0.5) * shakeIntensity;
-    camera.position.z = originalCameraPosition.z + (Math.random() - 0.5) * shakeIntensity;
-  }, 16);
 
   impactHappened = true;
   scene.remove(drakeCube);
@@ -291,6 +295,7 @@ function triggerExplosion() {
 
 function resetSimulation() {
   document.getElementById('flash').style.opacity = '0';
+  slowMotion = false;
   cancelAnimationFrame(animationId);
   while (scene.children.length > 0) scene.remove(scene.children[0]);
   explosionParticles = null;
