@@ -50,7 +50,8 @@
     opacity: 0;
     pointer-events: none;
     z-index: 999;
-    transition: opacity 0.15s ease-out;
+    transition: opacity 0.06s ease-out, transform 0.06s ease-out;
+    transform: scale(1);
   }
 </style>
 </head>
@@ -70,12 +71,14 @@ var explosionParticles = null;
 var impactHappened = false;
 var meteorVelocity = new THREE.Vector3(-0.03, 0, 0);
 var animationId;
+var originalCameraPosition;
 
 function initScene() {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
   camera.position.set(0, 3, 14);
+  originalCameraPosition = camera.position.clone();
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -128,8 +131,7 @@ function initScene() {
   rings.rotation.z = THREE.Math.degToRad(26.7);
   saturn.add(rings);
 
-    // === MULTIPLE MOONS SETUP ===
-    // Generate MANY moons (Saturn-style system)
+  // MULTIPLE MOONS SETUP
   var moonData = [];
   var moonCount = 8;
   for (var i = 0; i < moonCount; i++) {
@@ -193,7 +195,7 @@ function animate() {
 
   if (!impactHappened) {
     saturn.rotation.y += 0.0004;
-        moons.forEach(function(m) {
+    moons.forEach(function(m) {
       m.pivot.rotation.y += m.speed;
     });
 
@@ -224,12 +226,33 @@ function animate() {
 }
 
 function triggerExplosion() {
-  // FLASH EFFECT
+  // WHITE FLASH (MULTI-PULSE)
   var flash = document.getElementById('flash');
-  flash.style.opacity = '1';
-  setTimeout(function () {
-    flash.style.opacity = '0';
-  }, 120);
+  var pulses = [0, 90, 180];
+  pulses.forEach(function(delay) {
+    setTimeout(function () {
+      flash.style.opacity = '1';
+      setTimeout(function () {
+        flash.style.opacity = '0';
+      }, 80);
+    }, delay);
+  });
+
+  // CAMERA SHAKE
+  var shakeIntensity = 0.35;
+  var shakeDuration = 400;
+  var shakeStart = Date.now();
+  var shakeAnim = setInterval(function() {
+    var elapsed = Date.now() - shakeStart;
+    if (elapsed > shakeDuration) {
+      clearInterval(shakeAnim);
+      camera.position.copy(originalCameraPosition);
+      return;
+    }
+    camera.position.x = originalCameraPosition.x + (Math.random() - 0.5) * shakeIntensity;
+    camera.position.y = originalCameraPosition.y + (Math.random() - 0.5) * shakeIntensity;
+    camera.position.z = originalCameraPosition.z + (Math.random() - 0.5) * shakeIntensity;
+  }, 16);
 
   impactHappened = true;
   scene.remove(drakeCube);
