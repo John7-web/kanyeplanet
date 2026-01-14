@@ -73,6 +73,11 @@ var meteorVelocity = new THREE.Vector3(-0.03, 0, 0);
 var animationId;
 var originalCameraPosition;
 var slowMotion = false;
+var timeScale = 1;
+var timeRampStart = 0;
+var timeRampDuration = 0;
+var jitterAmount = 0.08;
+var shakeNoise = 0;
 
 function initScene() {
   scene = new THREE.Scene();
@@ -192,9 +197,20 @@ function updateSun() {
 }
 
 function animate() {
+  if (slowMotion) {
+    var t = (performance.now() - timeRampStart) / timeRampDuration;
+    t = Math.min(Math.max(t, 0), 1);
+    // smoothstep easing
+    var eased = t * t * (3 - 2 * t);
+    var baseScale = 0.15 + (1 - 0.15) * eased;
+    var jitter = shakeNoise * jitterAmount;
+    timeScale = Math.max(0.05, baseScale + jitter);
+  } else {
+    timeScale = 1;
+  }
   animationId = requestAnimationFrame(animate);
 
-  var delta = slowMotion ? 0.02 : 1;
+  var delta = timeScale;
 
   if (!impactHappened) {
     saturn.rotation.y += 0.0004 * delta;
@@ -230,31 +246,45 @@ function animate() {
 
 function triggerExplosion() {
   var flash = document.getElementById('flash');
-  var pulses = [0, 90, 180];
-  var shakeIntensity = 0.6;
+  var pulses = [0, 120, 260]; // flash timing unchanged
+  var shakeIntensity = 2.2; // harsher, longer shake only
 
   pulses.forEach(function(delay) {
     setTimeout(function () {
       flash.style.opacity = '1';
-      slowMotion = true; // enable slow-motion during pulse
+
+      // Smooth time ramp (ease in/out)
+      timeRampStart = performance.now();
+      timeRampDuration = 700;
+      slowMotion = true;
 
       var shakeStart = Date.now();
       var shakeAnim = setInterval(function() {
         var elapsed = Date.now() - shakeStart;
-        if (elapsed > 80) {
+        if (elapsed > 1200) { // extend shake duration only
           clearInterval(shakeAnim);
           camera.position.copy(originalCameraPosition);
-          slowMotion = false; // restore normal speed after pulse
+          slowMotion = false;
+          timeScale = 1;
           return;
         }
-        camera.position.x = originalCameraPosition.x + (Math.random() - 0.5) * shakeIntensity;
-        camera.position.y = originalCameraPosition.y + (Math.random() - 0.5) * shakeIntensity;
-        camera.position.z = originalCameraPosition.z + (Math.random() - 0.5) * shakeIntensity;
+        var nx = (Math.random() - 0.5);
+        var ny = (Math.random() - 0.5);
+        var nz = (Math.random() - 0.5);
+        shakeNoise = (nx + ny + nz) / 3;
+        camera.position.x = originalCameraPosition.x + nx * shakeIntensity;
+        camera.position.y = originalCameraPosition.y + ny * shakeIntensity;
+        camera.position.z = originalCameraPosition.z + nz * shakeIntensity;
+
+        // add slight rotational shake for brutality
+        camera.rotation.x = nx * 0.15;
+        camera.rotation.y = ny * 0.15;
+        camera.rotation.z = nz * 0.15;
       }, 16);
 
       setTimeout(function () {
         flash.style.opacity = '0';
-      }, 80);
+      }, 80); // keep flash short
     }, delay);
   });
 
